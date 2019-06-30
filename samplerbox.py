@@ -253,18 +253,29 @@ def MidiCallback(message, time_stamp, from_recording = False):
     elif messagetype == 11 and note == 117 and velocity < 64:
         stopRecord()
 
+    elif messagetype == 11 and note == 114 and velocity > 64:
+        resetLooper()
+
 #########################################
 # Looping
 #########################################
+def resetLooper():
+    global lastTime
+    global baseLoopTime
+    global baseLoopLength
+    global recording
 
-lastTime = -1
+    global loopData
+    global loopPointer
+    
+    lastTime = -1
 
-baseLoopTime = -1.0
-baseLoopLength = -1.0;
-recording = False
+    baseLoopTime = -1.0
+    baseLoopLength = -1.0;
+    recording = False
 
-loopData = []
-loopPointer = 0
+    loopData = []
+    loopPointer = 0
 
 def startRecord():
     global recording
@@ -304,7 +315,7 @@ def updateLoop():
         lastTime = lastTime + delta
 
         baseLoopTime = baseLoopTime + delta
-        print "Time: " + str(baseLoopTime) + " out of " + str(baseLoopLength)
+    #    print "Time: " + str(baseLoopTime) + " out of " + str(baseLoopLength)
 
         if baseLoopLength > 0 and baseLoopTime > baseLoopLength:
             baseLoopTime = 0.0
@@ -334,8 +345,9 @@ class LooperThread (threading.Thread):
    def run(self):
         while 1:
             updateLoop()
-            time.sleep(0.1)
+            time.sleep(0.01)
 
+resetLooper()
 LooperThread().start()
 
 #########################################
