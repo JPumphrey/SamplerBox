@@ -187,7 +187,7 @@ def AudioCallback(outdata, frame_count, time_info, status):
     b *= globalvolume
     outdata[:] = b.reshape(outdata.shape)
 
-def MidiCallback(message, time_stamp):
+def MidiCallback(message, time_stamp, from_recording = False):
     global playingnotes, sustain, sustainplayingnotes
     global preset
 
@@ -203,6 +203,8 @@ def MidiCallback(message, time_stamp):
         messagetype = 8
 
     if messagetype == 9:    # Note on
+        if not from_recording:
+            recordNote(message)
         midinote += globaltranspose
         try:
             playingnotes.setdefault(midinote, []).append(samples[midinote, velocity].play(midinote))
@@ -210,6 +212,8 @@ def MidiCallback(message, time_stamp):
             pass
 
     elif messagetype == 8:  # Note off
+        if not from_recording:
+            recordNote(message)
         midinote += globaltranspose
         if midinote in playingnotes:
             for n in playingnotes[midinote]:
@@ -259,6 +263,9 @@ baseLoopTime = -1.0
 baseLoopLength = -1.0;
 recording = False
 
+loopData = []
+loopPointer = 0
+
 def startRecord():
     global recording
     global baseLoopTime
@@ -286,6 +293,8 @@ def updateLoop():
     global baseLoopLength
     global baseLoopTime
     global lastTime
+    global loopPointer
+    global loopData
 
     #print "Looping..."
 
@@ -299,7 +308,23 @@ def updateLoop():
 
         if baseLoopLength > 0 and baseLoopTime > baseLoopLength:
             baseLoopTime = 0.0
+            loopPointer = 0
 
+        if not recording and len(loopData) > 0:
+            while (loopPointer < len(loopData) and baseLoopTime > loopData[loopPointer][0]):
+                print "Playing loop note #" + str(loopPointer) + " at time " + str(loopData[loopPointer][0])
+                MidiCallback(loopData[loopPointer][1], 0, True)
+                loopPointer = loopPointer + 1
+        
+def recordNote(message):
+    global baseLoopTime
+    global loopData
+    global loopPointer
+
+    if recording:
+        loopData.append((baseLoopTime, message))
+        loopPointer = loopPointer + 1
+        print "loopData " + str(loopData)
 
 class LooperThread (threading.Thread):
    def __init__(self):
