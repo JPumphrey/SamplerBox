@@ -243,6 +243,75 @@ def MidiCallback(message, time_stamp):
     elif (messagetype == 11) and (note == 64) and (velocity >= 64):  # sustain pedal on
         sustain = True
 
+    elif messagetype == 11 and note == 117 and velocity > 64:
+        startRecord()
+
+    elif messagetype == 11 and note == 117 and velocity < 64:
+        stopRecord()
+
+#########################################
+# Looping
+#########################################
+
+lastTime = -1
+
+baseLoopTime = -1.0
+baseLoopLength = -1.0;
+recording = False
+
+def startRecord():
+    global recording
+    global baseLoopTime
+    global lastTime
+
+    if baseLoopTime < 0 and not recording:
+        print "Recording"
+        recording = True
+        baseLoopTime = 0.0
+        lastTime = time.clock()
+        print "starting at " + str(lastTime)
+
+def stopRecord():
+    global baseLoopTime
+    global baseLoopLength
+    global recording
+
+    if recording:
+        if baseLoopLength < 0:
+            print "Stopped recording, length " + str(baseLoopTime)
+            baseLoopLength = baseLoopTime
+            recording = False
+
+def updateLoop():
+    global baseLoopLength
+    global baseLoopTime
+    global lastTime
+
+    #print "Looping..."
+
+    if baseLoopTime >= 0:
+
+        delta = time.clock() - lastTime
+        lastTime = lastTime + delta
+
+        baseLoopTime = baseLoopTime + delta
+        print "Time: " + str(baseLoopTime) + " out of " + str(baseLoopLength)
+
+        if baseLoopLength > 0 and baseLoopTime > baseLoopLength:
+            baseLoopTime = 0.0
+
+
+class LooperThread (threading.Thread):
+   def __init__(self):
+      threading.Thread.__init__(self)
+      self.daemon = True
+
+   def run(self):
+        while 1:
+            updateLoop()
+            time.sleep(0.1)
+
+LooperThread().start()
 
 #########################################
 # LOAD SAMPLES
