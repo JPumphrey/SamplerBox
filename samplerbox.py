@@ -286,7 +286,7 @@ def startRecord():
         print "Recording"
         recording = True
         baseLoopTime = 0.0
-        lastTime = time.clock()
+        lastTime = time.time()
         print "starting at " + str(lastTime)
 
 def stopRecord():
@@ -311,7 +311,7 @@ def updateLoop():
 
     if baseLoopTime >= 0:
 
-        delta = time.clock() - lastTime
+        delta = time.time() - lastTime
         lastTime = lastTime + delta
 
         baseLoopTime = baseLoopTime + delta
