@@ -266,7 +266,7 @@ def resetLooper():
     global recording
 
     global loopData
-    global loopPointer
+    global loopPointers
 
     global resetting
     
@@ -277,7 +277,7 @@ def resetLooper():
     recording = False
 
     loopData = []
-    loopPointer = 0
+    loopPointers = []
 
     resetting = False
 
@@ -285,13 +285,17 @@ def startRecord():
     global recording
     global baseLoopTime
     global lastTime
+    global loopData
 
-    if baseLoopTime < 0 and not recording:
+    if not recording:
+        if baseLoopTime < 0:
+            baseLoopTime = 0.0
+            lastTime = time.time()
+          #  print "starting at " + str(lastTime)
         print "Recording"
+        loopData.append([])
+        loopPointers.append(0)
         recording = True
-        baseLoopTime = 0.0
-        lastTime = time.time()
-        print "starting at " + str(lastTime)
 
 def stopRecord():
     global baseLoopTime
@@ -300,7 +304,7 @@ def stopRecord():
 
     if recording:
         if baseLoopLength < 0:
-            print "Stopped recording, length " + str(baseLoopTime)
+          #  print "Stopped recording, length " + str(baseLoopTime)
             baseLoopLength = baseLoopTime
             recording = False
 
@@ -308,7 +312,7 @@ def updateLoop():
     global baseLoopLength
     global baseLoopTime
     global lastTime
-    global loopPointer
+    global loopPointers
     global loopData
     global resetting
 
@@ -317,9 +321,10 @@ def updateLoop():
     if resetting:
         
         # Run any 'stops' to stop the notes
-        for data in loopData:
-            if data[1][0] >> 4 == 8:
-                MidiCallback(data[1], 0, True)
+        for loop in loopData:
+            for data in loop:
+                if data[1][0] >> 4 == 8:
+                    MidiCallback(data[1], 0, True)
 
         resetLooper()
     else:
@@ -333,13 +338,14 @@ def updateLoop():
 
             if baseLoopLength > 0 and baseLoopTime > baseLoopLength:
                 baseLoopTime = 0.0
-                loopPointer = 0
+                loopPointers = [0]*(len(loopData))
 
-            if not recording and len(loopData) > 0:
-                while (loopPointer < len(loopData) and baseLoopTime > loopData[loopPointer][0]):
-                    print "Playing loop note #" + str(loopPointer) + " at time " + str(loopData[loopPointer][0])
-                    MidiCallback(loopData[loopPointer][1], 0, True)
-                    loopPointer = loopPointer + 1
+            for i, loop in enumerate(loopData):
+                if len(loop) > 0:
+                    while (loopPointers[i] < len(loop) and baseLoopTime > loop[loopPointers[i]][0]):
+                     #   print "Playing loop note #" + str(loopPointers[i]) + " at time " + str(loop[loopPointers[i]][0])
+                        MidiCallback(loop[loopPointers[i]][1], 0, True)
+                        loopPointers[i] = loopPointers[i] + 1
 
 def requestResetLooper():
     global resetting
@@ -349,12 +355,12 @@ def requestResetLooper():
 def recordNote(message):
     global baseLoopTime
     global loopData
-    global loopPointer
+    global loopPointers
 
     if recording:
-        loopData.append((baseLoopTime, message))
-        loopPointer = loopPointer + 1
-        print "loopData " + str(loopData)
+        loopData[-1].append((baseLoopTime, message))
+        loopPointers[-1] = loopPointers[-1] + 1
+       # print "loopData " + str(loopData)
 
 class LooperThread (threading.Thread):
    def __init__(self):
