@@ -190,6 +190,7 @@ def AudioCallback(outdata, frame_count, time_info, status):
 def MidiCallback(message, time_stamp, from_recording = False):
     global playingnotes, sustain, sustainplayingnotes
     global preset
+    global speedScale
 
     messagetype = message[0] >> 4
     messagechannel = (message[0] & 15) + 1
@@ -256,6 +257,9 @@ def MidiCallback(message, time_stamp, from_recording = False):
     elif messagetype == 11 and note == 114 and velocity > 64:
         requestResetLooper()
 
+    elif messagetype == 11 and note == 21:
+        speedScale = float(velocity + 32) / 64
+
 #########################################
 # Looping
 #########################################
@@ -264,6 +268,7 @@ def resetLooper():
     global baseLoopTime
     global baseLoopLength
     global recording
+    global speedScale
 
     global loopData
     global loopPointers
@@ -278,6 +283,8 @@ def resetLooper():
 
     loopData = []
     loopPointers = []
+
+    speedScale = 1
 
     resetting = False
 
@@ -315,6 +322,7 @@ def updateLoop():
     global loopPointers
     global loopData
     global resetting
+    global speedScale
 
     #print "Looping..."
 
@@ -333,7 +341,7 @@ def updateLoop():
             delta = time.time() - lastTime
             lastTime = lastTime + delta
 
-            baseLoopTime = baseLoopTime + delta
+            baseLoopTime = baseLoopTime + delta * speedScale
         #    print "Time: " + str(baseLoopTime) + " out of " + str(baseLoopLength)
 
             if baseLoopLength > 0 and baseLoopTime > baseLoopLength:
