@@ -306,7 +306,7 @@ def stopRecord():
         if baseLoopLength < 0:
           #  print "Stopped recording, length " + str(baseLoopTime)
             baseLoopLength = baseLoopTime
-            recording = False
+        recording = False
 
 def updateLoop():
     global baseLoopLength
